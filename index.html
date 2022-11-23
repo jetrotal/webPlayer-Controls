@@ -1,18 +1,16 @@
-<!doctype html>
-<html lang="en">
-<head>
+<html lang="en"><head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EasyRPG Player</title>
   <style>
     :root {
       --color-gray: hsl(0, 0%, 55%);
-      --controls-size: 10vh;
+      --controls-size: 13vw;
     }
 
     @media (orientation: landscape) {
       :root {
-        --controls-size: 20vh;
+        --controls-size: 13vh;
       }
     }
 
@@ -64,14 +62,19 @@
 
     #canvas {
       position: absolute;
-      top: 50%;
+      top: calc(50% - 2.5 * var(--controls-size));
       left: 50%;
-      width: 320px;
-      height: 240px;
       border: 0;
       image-rendering: pixelated;
       image-rendering: crisp-edges;
       transform: translate(-50%, -50%);
+    }
+
+    @media (orientation: landscape) {
+      #canvas {
+        top: 50%;
+        left: calc(50% - 0.5 * var(--controls-size));
+      }
     }
 
     #dpad,
@@ -89,36 +92,95 @@
     }
 
     #dpad svg {
-      width: calc(2 * var(--controls-size));
-      height: calc(2 * var(--controls-size));
-      fill: var(--color-gray);
+      width: calc(3 * var(--controls-size));
+      height: calc(3 * var(--controls-size));
+      opacity: 0.2;
     }
 
-    #dpad svg rect {
-      opacity: 0.4;
+    #apad svg {
+      width: calc(4 * var(--controls-size));
+      height: calc(6 * var(--controls-size));
+      opacity: 0.2;
     }
 
-    #apad > * {
-      width: var(--controls-size);
-      height: var(--controls-size);
-      background-color: var(--color-gray);
-      border-radius: 50%;
+    #f12button {
+      position: fixed;
+      top: 1rem;
+      left: 1rem;
+      z-index: 10;
     }
 
-    #apad > :last-child {
-      position: relative;
-      right: var(--controls-size);
+    #f12button svg {
+      width: calc(1.5 * var(--controls-size));
+      height: calc(1 * var(--controls-size));
+      opacity: 0.2;
     }
 
-    #dpad path:not(.active),
-    #apad > *:not(.active) {
-      opacity: 0.4;
+    #apad svg *, #dpad svg *, #f12button svg * {
+      paint-order: stroke;
+    }
+
+    #controls-fullscreen {
+      opacity: 0.2;
+    }
+    
+    .active:not(.hidden-shape) {
+      opacity: 0.8;
+    }
+
+    .active:not(.hidden-shape), .active:not(.hidden-shape) :not(text, tspan) {
+      stroke: #fff;
+    }
+
+    .active text, .active tspan {
+      stroke: none;
+    }
+
+    @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;700&amp;display=swap');
+    text {
+      fill:white;
+      stroke:none;
+      text-anchor:middle;
+      font-size:6px;
+      font-family:'Nunito', sans-serif;
+      dominant-baseline:middle;
+    }
+    #kmain {
+      fill:white;
+      stroke:#000;
+    }
+    #kmain text {
+      fill:#808080;
+    }
+    #kmain path {
+      fill:none;
+      stroke:#808080;
+      stroke-width:0.5
+    }
+    #knum {
+      fill:#808080;
+      stroke:black;
+    }
+    #kspec {
+      stroke:#808080;
+    }
+
+    @media (hover: hover) and (pointer: fine) {
+      #apad,
+      #dpad,
+      #f12button {
+        display: none;
+      }
+      #canvas {
+        top: 50%;
+        left: 50%;
+      }
     }
 
     @media (min-width: 320px) and (min-height: 240px) { #canvas { width: 320px; height: 240px; } }
     @media (min-width: 640px) and (min-height: 480px) { #canvas { width: 640px; height: 480px; } }
     @media (min-width: 960px) and (min-height: 720px) { #canvas { width: 960px; height: 720px; } }
-    @media (min-width: 1280px) and (min-height: 720px) { #canvas { width: 1280px; height: 720px; } }
+    @media (min-width: 1280px) and (min-height: 960px) { #canvas { width: 1280px; height: 960px; } }
     @media (min-width: 1600px) and (min-height: 1200px) { #canvas { width: 1600px; height: 1200px; } }
     @media (min-width: 1920px) and (min-height: 1440px) { #canvas { width: 1920px; height: 1440px; } }
     @media (min-width: 2240px) and (min-height: 1680px) { #canvas { width: 2240px; height: 1680px; } }
@@ -133,10 +195,10 @@
     @media (min-width: 5120px) and (min-height: 3840px) { #canvas { width: 5120px; height: 3840px; } }
     @media (min-width: 5440px) and (min-height: 4080px) { #canvas { width: 5440px; height: 4080px; } }
     @media (min-width: 5760px) and (min-height: 4320px) { #canvas { width: 5760px; height: 4320px; } }
+
   </style>
 </head>
-<body>
-
+<body style="">
   <div id="controls">
     <button id="controls-fullscreen" class="unselectable">
       <svg viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg" width="25" height="25"><path d="M13.5 13.5H10m3.5 0V10m0 3.5l-4-4m.5-8h3.5m0 0V5m0-3.5l-4 4M5 1.5H1.5m0 0V5m0-3.5l4 4m-4 4.5v3.5m0 0H5m-3.5 0l4-4" stroke="currentColor"></path></svg>
@@ -145,24 +207,122 @@
 
   <div id="status"></div>
 
-  <canvas id="canvas" tabindex="-1" class="unselectable"></canvas>
+  <canvas id="canvas" tabindex="-1" class="unselectable" width="960" height="720" style="cursor: default;"></canvas>
+
+  <div id="f12button" class="unselectable">
+    <svg width="15" height="10" version="1.1" viewBox="0 0 15 10" xmlns="http://www.w3.org/2000/svg">
+      <g id="button-F12" data-key="F12" data-key-code="123">
+        <path d="m5 .5h5a4.5 4.5 45 014.5 4.5 4.5 4.5 135 01-4.5 4.5h-5a4.5 4.5 45 01-4.5-4.5 4.5 4.5 135 014.5-4.5z" stroke="#808080"></path>
+        <text x="7.4" y="5.6">F12</text>
+      </g>
+    </svg>
+  </div>
 
   <div id="dpad" class="unselectable">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72">
-      <path id="dpad-up" data-key="ArrowUp" data-key-code="38" d="M48,5.8C48,2.5,45.4,0,42,0H29.9C26.6,0,24,2.4,24,5.8V24h24V5.8z" />
-      <path id="dpad-right" data-key="ArrowRight" data-key-code="39" d="M66.2,24H48v24h18.2c3.3,0,5.8-2.7,5.8-6V29.9C72,26.5,69.5,24,66.2,24z" />
-      <path id="dpad-down" data-key="ArrowDown" data-key-code="40" d="M24,66.3c0,3.3,2.6,5.7,5.9,5.7H42c3.3,0,6-2.4,6-5.7V48H24V66.3z" />
-      <path id="dpad-left" data-key="ArrowLeft" data-key-code="37" d="M5.7,24C2.4,24,0,26.5,0,29.9V42c0,3.3,2.3,6,5.7,6H24V24H5.7z" />
-      <rect id="dpad-center" x="24" y="24" width="24" height="24" />
+    <svg width="30" height="30" version="1.1" viewBox="0 0 30 30" xmlns="http://www.w3.org/2000/svg">
+      <path id="dpad-up" data-key="ArrowUp" data-key-code="38" d="m12 .5c-.7854 0-1.5.7146-1.5 1.5v6.586c0 .7629.3141 1.521.8535 2.061l2.586 2.586c.5553.5552 1.566.5552 2.121 0l2.586-2.586c.5394-.5395.8535-1.298.8535-2.061v-6.586c0-.7854-.7146-1.5-1.5-1.5z" fill="#fff" stroke="#000" class=""></path>
+      <path id="dpad-left" data-key="ArrowLeft" data-key-code="37" d="m2 10.5c-.7854 0-1.5.7146-1.5 1.5v6c0 .7854.7146 1.5 1.5 1.5h6.586c.7629 0 1.521-.3141 2.061-.8535l2.586-2.586c.5552-.5553.5552-1.566 0-2.121l-2.586-2.586c-.5395-.5394-1.298-.8535-2.061-.8535z" fill="#fff" stroke="#000"></path>
+      <path id="dpad-down" data-key="ArrowDown" data-key-code="40" d="m15 16.33c-.3927 5.9e-5-.7829.1618-1.061.4395l-2.586 2.586c-.5394.5395-.8535 1.298-.8535 2.061v6.586c0 .7854.7146 1.5 1.5 1.5h6c.7854 0 1.5-.7146 1.5-1.5v-6.586c0-.7629-.3141-1.521-.8535-2.061l-2.586-2.586c-.2776-.2777-.6679-.4394-1.061-.4395z" fill="#fff" stroke="#000" class=""></path>
+      <path id="dpad-right" data-key="ArrowRight" data-key-code="39" d="m21.41 10.5c-.7629 0-1.521.3141-2.061.8535l-2.586 2.586c-.5552.5553-.5552 1.566 0 2.121l2.586 2.586c.5395.5394 1.298.8535 2.061.8535h6.586c.7854 0 1.5-.7146 1.5-1.5v-6c0-.7854-.7146-1.5-1.5-1.5z" fill="#fff" stroke="#000"></path>
+      <path id="dpad-up&amp;left" class="hidden-shape" data-key="ArrowUp&amp;ArrowLeft" data-key-code="38&amp;37" d="m11 .5586a15 15 0 00-10.44 10.44h8.441l4 4h2v-2l-4-4z" opacity="0"></path>
+      <path id="dpad-left&amp;down" class="hidden-shape" data-key="ArrowLeft&amp;ArrowDown" data-key-code="37&amp;40" d="m13 15-4 4h-8.441a15 15 0 0010.44 10.44v-8.441l4-4v-2z" opacity="0"></path>
+      <path id="dpad-down&amp;right" class="hidden-shape" data-key="ArrowDown&amp;ArrowRight" data-key-code="40&amp;39" d="m15 15v2l4 4v8.441a15 15 0 0010.44-10.44h-8.441l-4-4z" opacity="0"></path>
+      <path id="dpad-right&amp;up" class="hidden-shape" data-key="ArrowRight&amp;ArrowUp" data-key-code="39&amp;38" d="m19 .5488v8.451l-4 4v2h2l4-4h8.451a15 15 0 00-10.45-10.45z" opacity="0"></path>
     </svg>
   </div>
 
   <div id="apad" class="unselectable">
-    <div id="apad-escape" data-key="Escape" data-key-code="27"></div>
-    <div id="apad-enter" data-key="Enter" data-key-code="13"></div>
+    <svg width="45" height="50" version="1.1" viewBox="0 0 45 50" xmlns="http://www.w3.org/2000/svg" style="
+    overflow: visible;
+">
+  <defs></defs>
+  <g id="kmain" transform="matrix(1, 0, 0, 1, 3.900889, -9.752224)">
+    <g id="apad-enter" data-key="Enter" data-key-code="13">
+      <circle cx="25" cy="53.78" r="5.71"></circle>
+      <path d="M 26.596 53.405 C 26.596 54.182 25.965 54.813 25.188 54.813 L 24.718 54.813 L 24.718 55.564 L 23.404 54.437 L 24.718 53.311 L 24.718 54.062 L 25.188 54.062 C 25.551 54.062 25.845 53.767 25.845 53.405 L 25.845 51.996 L 26.596 51.996 L 26.596 53.405 Z"></path>
+    </g>
+    <g id="apad-escape" data-key="Escape" data-key-code="27" transform="matrix(0.87878, 0, 0, 0.87878, 1.910126, 6.385987)" style="">
+      <circle cx="36.811" cy="42.887" r="6.48"></circle>
+      <path d="M 34.136 41.671 L 35.595 41.671 L 35.595 42.157 L 34.622 42.157 L 34.622 42.643 L 35.595 42.643 L 35.595 43.129 L 34.622 43.129 L 34.622 43.616 L 35.595 43.616 L 35.595 44.103 L 34.136 44.103 L 34.136 41.671 M 36.567 41.671 L 37.54 41.671 L 37.54 42.157 L 36.567 42.157 L 36.567 42.643 L 37.054 42.643 C 37.324 42.643 37.54 42.862 37.54 43.129 L 37.54 43.616 C 37.54 43.886 37.324 44.103 37.054 44.103 L 36.081 44.103 L 36.081 43.616 L 37.054 43.616 L 37.054 43.129 L 36.567 43.129 C 36.3 43.129 36.081 42.913 36.081 42.643 L 36.081 42.157 C 36.081 41.889 36.3 41.671 36.567 41.671 M 38.513 41.671 L 38.999 41.671 C 39.269 41.671 39.486 41.889 39.486 42.157 L 39.486 42.4 L 38.999 42.4 L 38.999 42.157 L 38.513 42.157 L 38.513 43.616 L 38.999 43.616 L 38.999 43.373 L 39.486 43.373 L 39.486 43.616 C 39.486 43.886 39.269 44.103 38.999 44.103 L 38.513 44.103 C 38.245 44.103 38.027 43.886 38.027 43.616 L 38.027 42.157 C 38.027 41.889 38.245 41.671 38.513 41.671 Z"></path>
+    </g>
+    <g id="apad-shift" data-key="Shift" data-key-code="16" transform="matrix(1, 0, 0, 1, -3.064225, -0.199841)">
+      <circle cx="6.213" cy="53.78" r="5.71"></circle>
+      <path d="M 6.802 54.958 L 6.802 53.78 L 7.227 53.78 L 6.213 52.765 L 5.198 53.78 L 5.623 53.78 L 5.623 54.958 L 6.802 54.958 M 6.213 52.209 L 8.176 54.173 L 7.194 54.173 L 7.194 55.351 L 5.231 55.351 L 5.231 54.173 L 4.249 54.173 L 6.213 52.209 Z"></path>
+    </g>
+  </g>
+  <g id="knum" transform="matrix(0.87878, 0, 0, 0.87878, 4.34755, 1.785168)" style="">
+    <g id="apad-0" data-key="0" data-key-code="96">
+      <circle cx="15.61" cy="45" r="4.5"></circle>
+      <path d="M 15.396 43.931 C 15.16 43.931 14.969 44.123 14.969 44.359 L 14.969 45.641 C 14.969 45.877 15.16 46.068 15.396 46.068 L 15.824 46.068 C 16.06 46.068 16.251 45.877 16.251 45.641 L 16.251 44.359 C 16.251 44.123 16.06 43.931 15.824 43.931 L 15.396 43.931 M 15.396 44.359 L 15.824 44.359 L 15.824 45.641 L 15.396 45.641 L 15.396 44.359 Z"></path>
+    </g>
+    <g id="apad-1" data-key="1" data-key-code="97" transform="matrix(1, 0, 0, 1, -0.592234, -0.592234)">
+      <circle cx="5.608" cy="35" r="4.5"></circle>
+      <path d="M 5.181 33.931 L 5.181 34.358 L 5.609 34.358 L 5.609 36.068 L 6.036 36.068 L 6.036 33.931 L 5.181 33.931 Z"></path>
+    </g>
+    <g id="apad-2" data-key="2" data-key-code="98" transform="matrix(1, 0, 0, 1, -0.039482, -0.671199)">
+      <circle cx="15.61" cy="35" r="4.5"></circle>
+      <path d="M 14.969 33.931 L 14.969 34.358 L 15.823 34.358 L 15.823 34.786 L 15.396 34.786 C 15.16 34.786 14.969 34.977 14.969 35.213 L 14.969 36.068 L 15.396 36.068 L 16.251 36.068 L 16.251 35.64 L 15.396 35.64 L 15.396 35.213 L 15.823 35.213 C 16.059 35.213 16.251 35.022 16.251 34.786 L 16.251 34.358 C 16.251 34.122 16.059 33.931 15.823 33.931 L 14.969 33.931 Z"></path>
+    </g>
+    <g id="apad-3" data-key="3" data-key-code="99" transform="matrix(1, 0, 0, 1, 0.51327, -0.750164)">
+      <circle cx="25.61" cy="35" r="4.5"></circle>
+      <path d="M 26.252 35.641 L 26.252 35.321 C 26.252 35.143 26.108 35 25.931 35 C 26.108 35 26.252 34.856 26.252 34.679 L 26.252 34.359 C 26.252 34.121 26.059 33.931 25.824 33.931 L 24.969 33.931 L 24.969 34.359 L 25.824 34.359 L 25.824 34.786 L 25.397 34.786 L 25.397 35.214 L 25.824 35.214 L 25.824 35.641 L 24.969 35.641 L 24.969 36.068 L 25.824 36.068 C 26.06 36.068 26.252 35.877 26.252 35.641"></path>
+    </g>
+    <g id="apad-4" data-key="4" data-key-code="100" transform="matrix(1, 0, 0, 1, -0.592234, -1.066022)">
+      <circle cx="5.608" cy="25" r="4.5"></circle>
+      <path d="M 4.967 23.932 L 4.967 25.214 L 5.822 25.214 L 5.822 26.069 L 6.249 26.069 L 6.249 23.932 L 5.822 23.932 L 5.822 24.787 L 5.394 24.787 L 5.394 23.932 L 4.967 23.932 Z"></path>
+    </g>
+    <g id="apad-5" data-key="5" data-key-code="101" transform="matrix(1, 0, 0, 1, -0.039482, -1.144987)">
+      <circle cx="15.61" cy="25" r="4.5"></circle>
+      <path d="M 14.969 23.932 L 14.969 25.214 L 15.824 25.214 L 15.824 25.641 L 14.969 25.641 L 14.969 26.069 L 15.824 26.069 C 16.06 26.069 16.252 25.877 16.252 25.641 L 16.252 25.214 C 16.252 24.978 16.06 24.787 15.824 24.787 L 15.397 24.787 L 15.397 24.359 L 16.252 24.359 L 16.252 23.932 L 14.969 23.932 Z"></path>
+    </g>
+    <g id="apad-6" data-key="6" data-key-code="102" transform="matrix(1, 0, 0, 1, 0.51327, -1.223952)">
+      <circle cx="25.61" cy="25" r="4.5"></circle>
+      <path d="M 25.396 23.932 C 25.161 23.932 24.969 24.124 24.969 24.359 L 24.969 25.642 C 24.969 25.878 25.161 26.069 25.396 26.069 L 25.824 26.069 C 26.06 26.069 26.252 25.878 26.252 25.642 L 26.252 25.214 C 26.252 24.978 26.06 24.787 25.824 24.787 L 25.396 24.787 L 25.396 24.359 L 26.252 24.359 L 26.252 23.932 L 25.396 23.932 M 25.396 25.214 L 25.824 25.214 L 25.824 25.642 L 25.396 25.642 L 25.396 25.214 Z"></path>
+    </g>
+    <g id="apad-7" data-key="7" data-key-code="103" transform="matrix(1, 0, 0, 1, -0.552752, -1.618775)">
+      <circle cx="5.608" cy="15" r="4.5"></circle>
+      <path d="M 5.394 16.069 L 6.249 14.359 L 6.249 13.932 L 4.967 13.932 L 4.967 14.359 L 5.822 14.359 L 4.967 16.069"></path>
+    </g>
+    <g id="apad-8" data-key="8" data-key-code="104" transform="matrix(1, 0, 0, 1, 0, -1.697739)">
+      <circle cx="15.61" cy="15" r="4.5"></circle>
+      <path d="M 15.397 15.213 L 15.824 15.213 L 15.824 15.64 L 15.397 15.64 M 15.397 14.358 L 15.824 14.358 L 15.824 14.786 L 15.397 14.786 M 15.397 16.068 L 15.824 16.068 C 16.06 16.068 16.251 15.876 16.251 15.64 L 16.251 15.32 C 16.251 15.143 16.108 14.999 15.931 14.999 C 16.108 14.999 16.251 14.856 16.251 14.679 L 16.251 14.358 C 16.251 14.121 16.059 13.931 15.824 13.931 L 15.397 13.931 C 15.16 13.931 14.969 14.122 14.969 14.358 L 14.969 14.679 C 14.969 14.856 15.112 14.999 15.29 14.999 C 15.112 14.999 14.969 15.143 14.969 15.32 L 14.969 15.64 C 14.969 15.877 15.161 16.068 15.397 16.068"></path>
+    </g>
+    <g id="apad-9" data-key="9" data-key-code="105" transform="matrix(1, 0, 0, 1, 0.552752, -1.776704)">
+      <circle cx="25.61" cy="15" r="4.5"></circle>
+      <path d="M 25.823 16.068 C 26.059 16.068 26.251 15.877 26.251 15.641 L 26.251 14.358 C 26.251 14.122 26.059 13.931 25.823 13.931 L 25.396 13.931 C 25.159 13.931 24.969 14.122 24.969 14.358 L 24.969 14.786 C 24.969 15.022 25.159 15.214 25.396 15.214 L 25.823 15.214 L 25.823 15.641 L 24.969 15.641 L 24.969 16.068 L 25.823 16.068 M 25.823 14.786 L 25.396 14.786 L 25.396 14.358 L 25.823 14.358 L 25.823 14.786 Z"></path>
+    </g>
+  </g>
+  <g id="kspec" transform="matrix(1, 0, 0, 1, 3.900889, -9.752224)">
+    <g id="dpad-/" data-key="/" data-key-code="111" transform="matrix(0.872781, 0, 0, 0.872781, -8.752609, 9.535673)" style="">
+      <circle cx="15.61" cy="5" r="4.5"></circle>
+      <path d="M 14.534 6.936 L 16.234 3.064 L 16.686 3.064 L 14.986 6.936 L 14.534 6.936 Z"></path>
+    </g>
+    <g id="apad-*" data-key="*" data-key-code="106" transform="matrix(0.872781, 0, 0, 0.872781, -8.128077, 9.500977)" style="">
+      <circle cx="25.61" cy="5" r="4.5"></circle>
+      <path d="M 26.719 5.123 L 25.906 5.123 L 26.485 5.702 L 26.312 5.875 L 25.734 5.296 L 25.734 6.109 L 25.487 6.109 L 25.487 5.283 L 24.908 5.863 L 24.735 5.69 L 25.29 5.123 L 24.501 5.123 L 24.501 4.877 L 25.314 4.877 L 24.735 4.298 L 24.908 4.125 L 25.487 4.704 L 25.487 3.891 L 25.734 3.891 L 25.734 4.68 L 26.3 4.113 L 26.473 4.298 L 25.893 4.877 L 26.719 4.877 L 26.719 5.123 Z"></path>
+    </g>
+    <g id="apad--" data-key="-" data-key-code="109" transform="matrix(1, 0, 0, 1, -11.519156, 3.743455)">
+      <circle cx="34.98" cy="10.122" r="3.928"></circle>
+      <path d="M 35.903 10.353 L 34.057 10.353 L 34.057 9.891 L 35.903 9.891"></path>
+    </g>
+    <g id="apad-+" data-key="+" data-key-code="107" transform="matrix(0.884346, 0, 0, 0.884346, 1.792639, -3.866588)" style="">
+      <circle cx="35" cy="20" r="4.5"></circle>
+      <path d="M 35 19.575 C 34.765 19.575 34.576 19.764 34.576 20.001 C 34.576 20.236 34.766 20.425 35 20.425 C 35.236 20.425 35.424 20.236 35.424 20.001 C 35.424 19.764 35.234 19.575 35 19.575 Z"></path>
+    </g>
+    <g id="apad-." data-key="." data-key-code="110" transform="matrix(0.876635, 0, 0, 0.876635, 2.097196, -3.172664)" style="">
+      <circle cx="35" cy="30" r="4.5"></circle>
+      <path d="M 36.055 30.263 L 35.264 30.263 L 35.264 31.055 L 34.736 31.055 L 34.736 30.263 L 33.945 30.263 L 33.945 29.737 L 34.736 29.737 L 34.736 28.945 L 35.264 28.945 L 35.264 29.737 L 36.055 29.737 L 36.055 30.263 Z"></path>
+    </g>
+    <g id="hidePad" transform="matrix(0.87878, 0, 0, 0.87878, 2.014215, 6.026499)" style="" data-key=".">
+      <circle cx="35" cy="30" r="4.5"></circle>
+      <path d="M 35.855 31.709 L 36.71 31.709 L 36.71 30.855 L 35.855 30.855 M 35.855 30.427 L 36.71 30.427 L 36.71 29.572 L 35.855 29.572 M 34.573 29.145 L 35.428 29.145 L 35.428 28.29 L 34.573 28.29 M 35.855 29.145 L 36.71 29.145 L 36.71 28.29 L 35.855 28.29 M 34.573 30.427 L 35.428 30.427 L 35.428 29.572 L 34.573 29.572 M 33.291 30.427 L 34.145 30.427 L 34.145 29.572 L 33.291 29.572 M 33.291 31.709 L 34.145 31.709 L 34.145 30.855 L 33.291 30.855 M 34.573 31.709 L 35.428 31.709 L 35.428 30.855 L 34.573 30.855 M 33.291 29.145 L 34.145 29.145 L 34.145 28.29 L 33.291 28.29 L 33.291 29.145 Z"></path>
+    </g>
+  </g>
+</svg>
+
   </div>
 
-<script async type="text/javascript" src="index.js"></script>
+<script async="" type="text/javascript" src="easyrpg-player.js"></script>
 
 <script>
 const hasTouchscreen = window.matchMedia('(hover: none), (pointer: coarse)').matches;
@@ -178,8 +338,18 @@ canvas.addEventListener('click', () => window.focus());
 
 // Handle clicking on the fullscreen button
 document.querySelector('#controls-fullscreen').addEventListener('click', () => {
-  if (canvas.requestFullscreen) {
-    canvas.requestFullscreen();
+  if (hasTouchscreen) {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen();
+      }
+    }
+  } else {
+    if (canvas.requestFullscreen) {
+      canvas.requestFullscreen();
+    }
   }
 });
 
@@ -191,6 +361,19 @@ document.querySelector('#controls-fullscreen').addEventListener('click', () => {
  * @param {number} keyCode Key code to simulate (deprecated)
  */
 function simulateKeyboardEvent(eventType, key, keyCode) {
+  // simulate multiple key events (data-key and data-key-code containing "&"):
+  const mk = key.split('&');
+  if (mk.length > 1) {
+    const mkc = keyCode.split('&');
+    mk.forEach((x, i) => {
+      const node = document.querySelector('[data-key="' + x + '"]');
+      if (eventType == 'keydown') node.classList.add('active');
+      else node.classList.remove('active');
+      simulateKeyboardEvent(eventType, x, mkc[i]);
+    });
+    return;
+  }
+  // simulate regular key event:
   const event = new Event(eventType, { bubbles: true });
   event.key = key;
   event.code = key;
@@ -242,7 +425,7 @@ function bindKey(node, key, keyCode) {
 
     keysDown.delete(event.target.id);
     node.classList.remove('active');
-
+  
     if (lastTouchedId) {
       document.getElementById(lastTouchedId).classList.remove('active');
     }
@@ -252,7 +435,9 @@ function bindKey(node, key, keyCode) {
   node.addEventListener('touchmove', event => {
     const { target, clientX, clientY } = event.changedTouches[0];
     const origTargetId = keysDown.get(target.id);
-    const nextTargetId = document.elementFromPoint(clientX, clientY).id;
+    const nextTarget = document.elementFromPoint(clientX, clientY);
+    if (nextTarget === null) return;
+    const nextTargetId = nextTarget.id;
     if (origTargetId === nextTargetId) return;
 
     if (origTargetId) {
@@ -270,65 +455,6 @@ function bindKey(node, key, keyCode) {
       document.getElementById(nextTargetId).classList.add('active');
     }
   })
-}
-
-/** @type {{[key: number]: Gamepad}} */
-let gamepads = {};
-const haveEvents = 'ongamepadonnected' in window;
-
-function addGamepad(gamepad) {
-  gamepads[gamepad.index] = gamepad;
-  updateTouchControlsVisibility();
-}
-
-function removeGamepad(gamepad) {
-  delete gamepads[gamepad.index];
-  updateTouchControlsVisibility();
-}
-
-/** @returns {Gamepad[]} */
-function getGamepads() {
-  var pads = navigator.getGamepads ? navigator.getGamepads() : (navigator.webkitGetGamepads ? navigator.webkitGetGamepads() : []);
-  return pads;
-}
-
-function scanGamePads() {
-  var pads = getGamepads();
-  for (var i = 0; i < pads.length; i++) {
-    if (pads[i]) {
-      if (pads[i].index in gamepads) {
-        gamepads[pads[i].index] = pads[i];
-      } else {
-        addGamepad(pads[i]);
-      }
-    }
-  }
-}
-
-if (!haveEvents) {
-  setInterval(scanGamePads, 500);
-}
-
-window.addEventListener('gamepadconnected', function(e) {
-  addGamepad(e.gamepad);
-});
-
-window.addEventListener('gamepaddisconnected', function(e) {
-  removeGamepad(e.gamepad);
-})
-
-function updateTouchControlsVisibility() {
-  if (hasTouchscreen && Object.keys(gamepads).length === 0) {
-    for (const elem of document.querySelectorAll('#dpad, #apad')) {
-      elem.style.display = '';
-    }
-  } else {
-    // If we don't have a touch screen, OR any gamepads are connected...
-    for (const elem of document.querySelectorAll('#dpad, #apad')) {
-      // Hide the touch controls
-      elem.style.display = 'none';
-    }
-  }
 }
 
 // Bind all elements providing a `data-key` attribute with the
@@ -354,11 +480,7 @@ if (hasTouchscreen) {
   //   simulateKeyboardInput('Enter', 13);
   // });
 }
-
-updateTouchControlsVisibility();
 </script>
 
-</body>
-</html>
 
-
+</body></html>
